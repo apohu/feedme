@@ -2,7 +2,8 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RecipeService } from '../../services/recipe.service';
-import { Recipe } from '../../models/types';
+import { IngredientService } from '../../services/ingredient.service';
+import { Recipe, Ingredient } from '../../models/types';
 
 @Component({
   selector: 'app-recipes',
@@ -77,7 +78,7 @@ import { Recipe } from '../../models/types';
       </div>
 
       <div class="recipes-list">
-        <div *ngFor="let recipe of recipes" class="recipe-card">
+        <div *ngFor="let recipe of recipes" class="recipe-card" (click)="viewRecipeDetails(recipe)">
           <h3>{{ recipe.name }}</h3>
           <p>{{ recipe.description }}</p>
           <div class="recipe-meta">
@@ -99,6 +100,62 @@ import { Recipe } from '../../models/types';
 
       <div *ngIf="recipes.length === 0" class="empty-state">
         <p>Aucune recette trouvée. Créez votre première recette !</p>
+      </div>
+
+      <!-- Modal détails de recette -->
+      <div *ngIf="showDetailsModal" class="modal-overlay" (click)="closeDetailsModal()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+          <h3>{{ selectedRecipe?.name }}</h3>
+
+          <div class="recipe-details">
+            <p><strong>Description:</strong> {{ selectedRecipe?.description || 'Non renseignée' }}</p>
+            <p><strong>Instructions:</strong> {{ selectedRecipe?.instructions || 'Non renseignées' }}</p>
+
+            <div class="detail-row">
+              <span><strong>Temps de préparation:</strong> {{ selectedRecipe?.prep_time_minutes || 'N/A' }} min</span>
+              <span><strong>Temps de cuisson:</strong> {{ selectedRecipe?.cook_time_minutes || 'N/A' }} min</span>
+            </div>
+
+            <div class="detail-row">
+              <span><strong>Portions:</strong> {{ selectedRecipe?.servings || 'N/A' }}</span>
+              <span><strong>Coût estimé:</strong> {{ selectedRecipe?.estimated_cost || 'N/A' }}€</span>
+              <span class="nutriscore nutriscore-{{ selectedRecipe?.nutriscore }}">
+                {{ selectedRecipe?.nutriscore }}
+              </span>
+            </div>
+
+            <div class="ingredients-section">
+              <h4>Ingrédients</h4>
+              <div *ngIf="selectedRecipe?.ingredients && selectedRecipe.ingredients.length > 0">
+                <div *ngFor="let ing of selectedRecipe.ingredients" class="ingredient-item">
+                  {{ ing.quantity }} {{ ing.unit }} {{ ing.ingredient_name }}
+                </div>
+              </div>
+              <p *ngIf="!selectedRecipe?.ingredients || selectedRecipe.ingredients.length === 0">
+                Aucun ingrédient ajouté
+              </p>
+
+              <div class="add-ingredient-form">
+                <h5>Ajouter un ingrédient</h5>
+                <select [(ngModel)]="newIngredient.ingredientId" name="ingredient">
+                  <option value="">Sélectionner un ingrédient</option>
+                  <option *ngFor="let ing of availableIngredients" [value]="ing.id">
+                    {{ ing.name }}
+                  </option>
+                </select>
+                <input type="number" [(ngModel)]="newIngredient.quantity" placeholder="Quantité" min="0" step="0.1" />
+                <input type="text" [(ngModel)]="newIngredient.unit" placeholder="Unité (g, ml, pièce...)" />
+                <button class="btn-primary" (click)="addIngredient()" [disabled]="!newIngredient.ingredientId">
+                  Ajouter
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-actions">
+            <button class="btn-secondary" (click)="closeDetailsModal()">Fermer</button>
+          </div>
+        </div>
       </div>
     </div>
   `,
@@ -134,6 +191,13 @@ import { Recipe } from '../../models/types';
       padding: 15px;
       background: white;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .recipe-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
     }
 
     .recipe-card h3 {
@@ -243,6 +307,89 @@ import { Recipe } from '../../models/types';
       background: #ccc;
       cursor: not-allowed;
     }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      max-width: 700px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .recipe-details {
+      margin: 20px 0;
+    }
+
+    .detail-row {
+      display: flex;
+      gap: 20px;
+      margin: 10px 0;
+      align-items: center;
+    }
+
+    .ingredients-section {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f9f9f9;
+      border-radius: 4px;
+    }
+
+    .ingredient-item {
+      padding: 8px;
+      margin: 5px 0;
+      background: white;
+      border-radius: 4px;
+    }
+
+    .add-ingredient-form {
+      margin-top: 15px;
+      padding: 15px;
+      background: #fff;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+    }
+
+    .add-ingredient-form h5 {
+      margin-top: 0;
+    }
+
+    .add-ingredient-form select,
+    .add-ingredient-form input {
+      width: calc(25% - 10px);
+      margin-right: 10px;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+
+    .add-ingredient-form button {
+      width: auto;
+      margin: 0;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
   `]
 })
 export class RecipesComponent implements OnInit {
@@ -259,13 +406,36 @@ export class RecipesComponent implements OnInit {
     nutriscore: 'C'
   };
 
+  // Modal détails
+  showDetailsModal = false;
+  selectedRecipe: Recipe | null = null;
+  availableIngredients: Ingredient[] = [];
+  newIngredient = {
+    ingredientId: '',
+    quantity: 0,
+    unit: ''
+  };
+
   constructor(
     private recipeService: RecipeService,
+    private ingredientService: IngredientService,
     private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
     this.loadRecipes();
+    this.loadIngredients();
+  }
+
+  loadIngredients(): void {
+    this.ingredientService.getAllIngredients().subscribe({
+      next: (ingredients) => {
+        this.availableIngredients = ingredients;
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement des ingrédients:', error);
+      }
+    });
   }
 
   loadRecipes(): void {
@@ -313,6 +483,56 @@ export class RecipesComponent implements OnInit {
       servings: 2,
       estimated_cost: undefined,
       nutriscore: 'C'
+    };
+  }
+
+  viewRecipeDetails(recipe: Recipe): void {
+    // Charger les détails complets de la recette avec ingrédients et tags
+    this.recipeService.getRecipeById(recipe.id!).subscribe({
+      next: (fullRecipe) => {
+        this.selectedRecipe = fullRecipe;
+        this.showDetailsModal = true;
+        this.resetNewIngredient();
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement des détails:', error);
+        alert('Erreur lors du chargement des détails de la recette');
+      }
+    });
+  }
+
+  closeDetailsModal(): void {
+    this.showDetailsModal = false;
+    this.selectedRecipe = null;
+    this.resetNewIngredient();
+  }
+
+  addIngredient(): void {
+    if (!this.newIngredient.ingredientId || !this.selectedRecipe?.id) return;
+
+    this.recipeService.addIngredientToRecipe(
+      this.selectedRecipe.id,
+      Number(this.newIngredient.ingredientId),
+      this.newIngredient.quantity,
+      this.newIngredient.unit
+    ).subscribe({
+      next: () => {
+        // Recharger les détails de la recette pour afficher le nouvel ingrédient
+        this.viewRecipeDetails(this.selectedRecipe!);
+        this.resetNewIngredient();
+      },
+      error: (error) => {
+        console.error('Erreur lors de l\'ajout de l\'ingrédient:', error);
+        alert('Erreur lors de l\'ajout de l\'ingrédient');
+      }
+    });
+  }
+
+  resetNewIngredient(): void {
+    this.newIngredient = {
+      ingredientId: '',
+      quantity: 0,
+      unit: ''
     };
   }
 }
