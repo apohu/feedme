@@ -42,7 +42,17 @@ export const createMenu = async (req: Request, res: Response): Promise<void> => 
 
 export const generateMenuSuggestion = async (req: Request, res: Response): Promise<void> => {
   try {
+    console.log('📥 Requête reçue - Body:', JSON.stringify(req.body, null, 2));
+    console.log('📥 Content-Type:', req.headers['content-type']);
+
     const criteria: MenuSuggestionCriteria = req.body;
+
+    if (!criteria || Object.keys(criteria).length === 0) {
+      console.log('⚠️ Critères vides ou non définis');
+      res.status(400).json({ error: 'Critères de recherche manquants' });
+      return;
+    }
+
     console.log('🔍 Critères de recherche reçus:', JSON.stringify(criteria, null, 2));
 
     const suggestedRecipes = await MenuSuggestionService.generateMenuSuggestions(criteria);
@@ -53,13 +63,16 @@ export const generateMenuSuggestion = async (req: Request, res: Response): Promi
       criteria.cycle_days || 7
     );
 
+    console.log('📤 Envoi de la réponse avec', suggestedRecipes.length, 'recettes');
+
     res.json({
       recipes: suggestedRecipes,
       distribution: distributedMenu,
       message: 'Suggestion de menu générée avec succès'
     });
   } catch (error: any) {
-    console.error('❌ Erreur génération menu:', error.message);
+    console.error('❌ Erreur génération menu:', error);
+    console.error('❌ Stack trace:', error.stack);
     res.status(500).json({ error: error.message || 'Erreur lors de la génération de suggestions' });
   }
 };

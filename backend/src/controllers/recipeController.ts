@@ -4,9 +4,12 @@ import { Recipe } from '../types';
 
 export const getAllRecipes = async (req: Request, res: Response): Promise<void> => {
   try {
+    console.log('📚 getAllRecipes appelé');
     const recipes = await RecipeModel.getAll();
+    console.log(`✅ ${recipes.length} recettes récupérées`);
     res.json(recipes);
   } catch (error) {
+    console.error('❌ Erreur getAllRecipes:', error);
     res.status(500).json({ error: 'Erreur lors de la récupération des recettes' });
   }
 };
@@ -34,10 +37,13 @@ export const getRecipeById = async (req: Request, res: Response): Promise<void> 
 
 export const createRecipe = async (req: Request, res: Response): Promise<void> => {
   try {
+    console.log('➕ createRecipe appelé avec:', JSON.stringify(req.body, null, 2));
     const recipe: Recipe = req.body;
     const id = await RecipeModel.create(recipe);
+    console.log(`✅ Recette créée avec ID: ${id}`);
     res.status(201).json({ id, message: 'Recette créée avec succès' });
   } catch (error) {
+    console.error('❌ Erreur createRecipe:', error);
     res.status(500).json({ error: 'Erreur lors de la création de la recette' });
   }
 };

@@ -164,13 +164,14 @@ export class RecipeModel {
       params.push(...criteria.excludeIngredients);
     }
 
+    // Include NULL values in cost/time filters so recipes without these values aren't excluded
     if (criteria.maxCost) {
-      conditions.push('r.estimated_cost <= ?');
+      conditions.push('(r.estimated_cost IS NULL OR r.estimated_cost <= ?)');
       params.push(criteria.maxCost);
     }
 
     if (criteria.maxPrepTime) {
-      conditions.push('r.prep_time_minutes <= ?');
+      conditions.push('(r.prep_time_minutes IS NULL OR r.prep_time_minutes <= ?)');
       params.push(criteria.maxPrepTime);
     }
 
@@ -185,7 +186,11 @@ export class RecipeModel {
 
     query += ' ORDER BY r.nutriscore ASC, r.estimated_cost ASC';
 
+    console.log('🔍 SQL Query:', query);
+    console.log('🔍 SQL Params:', params);
+
     const [rows] = await pool.query<RowDataPacket[]>(query, params);
+    console.log(`📝 Requête SQL a trouvé ${rows.length} recettes`);
     return rows as Recipe[];
   }
 }

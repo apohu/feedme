@@ -7,9 +7,11 @@ interface ScoredRecipe extends Recipe {
 
 export class MenuSuggestionService {
   static async generateMenuSuggestions(criteria: MenuSuggestionCriteria): Promise<Recipe[]> {
+    console.log('🔧 MenuSuggestionService.generateMenuSuggestions appelé');
     const cycleDays = criteria.cycle_days || 7;
     const mealsPerDay = 2; // lunch, dinner
     const totalMeals = cycleDays * mealsPerDay;
+    console.log(`📊 Génération pour ${cycleDays} jours, ${mealsPerDay} repas/jour = ${totalMeals} repas total`);
 
     // Récupérer les recettes candidates
     const searchCriteria: {
@@ -32,7 +34,9 @@ export class MenuSuggestionService {
       searchCriteria.excludeIngredients = criteria.excluded_ingredients;
     }
 
+    console.log('🔍 Critères de recherche SQL:', JSON.stringify(searchCriteria, null, 2));
     const candidateRecipes = await RecipeModel.searchByCriteria(searchCriteria);
+    console.log(`📝 ${candidateRecipes.length} recettes candidates trouvées`);
 
     if (candidateRecipes.length === 0) {
       throw new Error('Aucune recette ne correspond aux critères');
