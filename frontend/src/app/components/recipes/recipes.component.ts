@@ -80,11 +80,11 @@ import { Recipe, Ingredient } from '../../models/types';
             </div>
             <div class="add-temp-ingredient">
               <select [(ngModel)]="newTempIngredient.ingredientId" name="tempIng">
-                <option value="">Sélectionner un ingrédient</option>
+                <option value="">{{ availableIngredients.length === 0 ? 'Chargement...' : 'Sélectionner un ingrédient' }}</option>
                 <option *ngFor="let ing of availableIngredients" [value]="ing.id">{{ ing.name }}</option>
               </select>
-              <input type="number" [(ngModel)]="newTempIngredient.quantity" placeholder="Quantité" min="0" step="0.1" />
-              <input type="text" [(ngModel)]="newTempIngredient.unit" placeholder="Unité" />
+              <input type="number" [(ngModel)]="newTempIngredient.quantity" name="tempQuantity" placeholder="Quantité" min="0" step="0.1" />
+              <input type="text" [(ngModel)]="newTempIngredient.unit" name="tempUnit" placeholder="Unité" />
               <button type="button" class="btn-add-ing" (click)="addTempIngredient()" [disabled]="!newTempIngredient.ingredientId">+</button>
             </div>
           </div>
