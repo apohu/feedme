@@ -43,8 +43,10 @@ export const createMenu = async (req: Request, res: Response): Promise<void> => 
 export const generateMenuSuggestion = async (req: Request, res: Response): Promise<void> => {
   try {
     const criteria: MenuSuggestionCriteria = req.body;
+    console.log('🔍 Critères de recherche reçus:', JSON.stringify(criteria, null, 2));
 
     const suggestedRecipes = await MenuSuggestionService.generateMenuSuggestions(criteria);
+    console.log('✅ Recettes trouvées:', suggestedRecipes.length);
 
     const distributedMenu = MenuSuggestionService.distributeMealsInMenu(
       suggestedRecipes,
@@ -57,6 +59,7 @@ export const generateMenuSuggestion = async (req: Request, res: Response): Promi
       message: 'Suggestion de menu générée avec succès'
     });
   } catch (error: any) {
+    console.error('❌ Erreur génération menu:', error.message);
     res.status(500).json({ error: error.message || 'Erreur lors de la génération de suggestions' });
   }
 };

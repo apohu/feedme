@@ -282,12 +282,14 @@ export class RecipesComponent implements OnInit {
     this.recipeService.createRecipe(this.newRecipe).subscribe({
       next: (response) => {
         console.log('Recette créée:', response);
-        this.loadRecipes();
+        alert('✅ Recette créée avec succès !');
         this.cancelCreate();
+        // Recharger après un court délai pour laisser la DB se mettre à jour
+        setTimeout(() => this.loadRecipes(), 300);
       },
       error: (error) => {
         console.error('Erreur lors de la création:', error);
-        alert('Erreur lors de la création de la recette');
+        alert('❌ Erreur lors de la création de la recette: ' + (error.error?.error || error.message));
       }
     });
   }
