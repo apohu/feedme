@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RecipeService } from '../../services/recipe.service';
@@ -259,7 +259,10 @@ export class RecipesComponent implements OnInit {
     nutriscore: 'C'
   };
 
-  constructor(private recipeService: RecipeService) {}
+  constructor(
+    private recipeService: RecipeService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadRecipes();
@@ -273,6 +276,8 @@ export class RecipesComponent implements OnInit {
         console.log('📊 Nombre de recettes:', recipes.length);
         this.recipes = recipes;
         console.log('📦 this.recipes après assignation:', this.recipes);
+        console.log('🔄 Forçage de la détection de changement...');
+        this.cdr.detectChanges();
       },
       error: (error) => {
         console.error('❌ Erreur lors du chargement des recettes:', error);
@@ -286,10 +291,9 @@ export class RecipesComponent implements OnInit {
     this.recipeService.createRecipe(this.newRecipe).subscribe({
       next: (response) => {
         console.log('Recette créée:', response);
-        alert('✅ Recette créée avec succès !');
         this.cancelCreate();
-        // Recharger après un court délai pour laisser la DB se mettre à jour
-        setTimeout(() => this.loadRecipes(), 300);
+        this.loadRecipes();
+        alert('✅ Recette créée avec succès !');
       },
       error: (error) => {
         console.error('Erreur lors de la création:', error);
