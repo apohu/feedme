@@ -266,12 +266,16 @@ export class RecipesComponent implements OnInit {
   }
 
   loadRecipes(): void {
+    console.log('🔄 loadRecipes() appelé');
     this.recipeService.getAllRecipes().subscribe({
       next: (recipes) => {
+        console.log('✅ Recettes reçues du backend:', recipes);
+        console.log('📊 Nombre de recettes:', recipes.length);
         this.recipes = recipes;
+        console.log('📦 this.recipes après assignation:', this.recipes);
       },
       error: (error) => {
-        console.error('Erreur lors du chargement des recettes:', error);
+        console.error('❌ Erreur lors du chargement des recettes:', error);
       }
     });
   }
