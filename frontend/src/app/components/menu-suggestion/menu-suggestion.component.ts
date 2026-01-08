@@ -395,9 +395,9 @@ export class MenuSuggestionComponent implements OnInit {
 
   getMealTypeLabel(mealType: string): string {
     const labels: any = {
-      breakfast: 'Petit-déjeuner',
       lunch: 'Déjeuner',
-      dinner: 'Dîner'
+      dinner: 'Dîner',
+      snack: 'Snack'
     };
     return labels[mealType] || mealType;
   }

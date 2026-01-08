@@ -187,7 +187,7 @@ import { CalendarEntry, NutritionScore } from '../../models/types';
 export class CalendarComponent implements OnInit {
   currentDate = new Date();
   weekDays: { name: string; date: Date }[] = [];
-  mealTypes = ['breakfast', 'lunch', 'dinner'];
+  mealTypes = ['lunch', 'dinner'];
   entries: CalendarEntry[] = [];
   nutritionScore: NutritionScore | null = null;
 
@@ -253,9 +253,9 @@ export class CalendarComponent implements OnInit {
 
   getMealTypeLabel(mealType: string): string {
     const labels: any = {
-      breakfast: 'Petit-déjeuner',
       lunch: 'Déjeuner',
-      dinner: 'Dîner'
+      dinner: 'Dîner',
+      snack: 'Snack'
     };
     return labels[mealType] || mealType;
   }

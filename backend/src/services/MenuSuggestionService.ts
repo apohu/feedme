@@ -8,7 +8,7 @@ interface ScoredRecipe extends Recipe {
 export class MenuSuggestionService {
   static async generateMenuSuggestions(criteria: MenuSuggestionCriteria): Promise<Recipe[]> {
     const cycleDays = criteria.cycle_days || 7;
-    const mealsPerDay = 3; // breakfast, lunch, dinner
+    const mealsPerDay = 2; // lunch, dinner
     const totalMeals = cycleDays * mealsPerDay;
 
     // Récupérer les recettes candidates
@@ -182,7 +182,7 @@ export class MenuSuggestionService {
     cycleDays: number
   ): { [day: number]: { [mealType: string]: Recipe } } {
     const menu: { [day: number]: { [mealType: string]: Recipe } } = {};
-    const mealTypes: MealType[] = ['breakfast', 'lunch', 'dinner'];
+    const mealTypes: MealType[] = ['lunch', 'dinner'];
 
     let recipeIndex = 0;
 

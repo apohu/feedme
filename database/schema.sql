@@ -3,6 +3,7 @@
 DROP DATABASE IF EXISTS feedme;
 CREATE DATABASE feedme CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE feedme;
+SET NAMES utf8mb4;
 
 -- Table des ingrédients
 CREATE TABLE ingredients (
