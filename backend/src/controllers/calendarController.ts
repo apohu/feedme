@@ -34,11 +34,15 @@ export const getEntriesByDateRange = async (req: Request, res: Response): Promis
 
 export const createEntry = async (req: Request, res: Response): Promise<void> => {
   try {
+    console.log('➕ createEntry appelé avec:', JSON.stringify(req.body, null, 2));
     const entry: CalendarEntry = req.body;
     const id = await CalendarEntryModel.create(entry);
+    console.log(`✅ Entrée créée avec ID: ${id}`);
     res.status(201).json({ id, message: 'Entrée créée avec succès' });
-  } catch (error) {
-    res.status(500).json({ error: 'Erreur lors de la création de l\'entrée' });
+  } catch (error: any) {
+    console.error('❌ Erreur createEntry:', error);
+    console.error('❌ Stack trace:', error.stack);
+    res.status(500).json({ error: 'Erreur lors de la création de l\'entrée: ' + error.message });
   }
 };
 
