@@ -1,0 +1,93 @@
+import { Request, Response } from 'express';
+import { MenuModel } from '../models/Menu';
+import { MenuSuggestionService } from '../services/MenuSuggestionService';
+import { Menu, MenuSuggestionCriteria } from '../types';
+
+export const getAllMenus = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const menus = await MenuModel.getAll();
+    res.json(menus);
+  } catch (error) {
+    res.status(500).json({ error: 'Erreur lors de la récupération des menus' });
+  }
+};
+
+export const getMenuById = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = parseInt(req.params.id);
+    const menu = await MenuModel.getById(id);
+
+    if (!menu) {
+      res.status(404).json({ error: 'Menu non trouvé' });
+      return;
+    }
+
+    res.json(menu);
+  } catch (error) {
+    res.status(500).json({ error: 'Erreur lors de la récupération du menu' });
+  }
+};
+
+export const createMenu = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const menu: Menu = req.body;
+    const id = await MenuModel.create(menu);
+    res.status(201).json({ id, message: 'Menu créé avec succès' });
+  } catch (error) {
+    res.status(500).json({ error: 'Erreur lors de la création du menu' });
+  }
+};
+
+export const generateMenuSuggestion = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const criteria: MenuSuggestionCriteria = req.body;
+
+    const suggestedRecipes = await MenuSuggestionService.generateMenuSuggestions(criteria);
+
+    const distributedMenu = MenuSuggestionService.distributeMealsInMenu(
+      suggestedRecipes,
+      criteria.cycle_days || 7
+    );
+
+    res.json({
+      recipes: suggestedRecipes,
+      distribution: distributedMenu,
+      message: 'Suggestion de menu générée avec succès'
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Erreur lors de la génération de suggestions' });
+  }
+};
+
+export const updateMenu = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = parseInt(req.params.id);
+    const menu: Partial<Menu> = req.body;
+    const success = await MenuModel.update(id, menu);
+
+    if (!success) {
+      res.status(404).json({ error: 'Menu non trouvé' });
+      return;
+    }
+
+    res.json({ message: 'Menu mis à jour avec succès' });
+  } catch (error) {
+    res.status(500).json({ error: 'Erreur lors de la mise à jour du menu' });
+  }
+};
+
+export const deleteMenu = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = parseInt(req.params.id);
+    const success = await MenuModel.delete(id);
+
+    if (!success) {
+      res.status(404).json({ error: 'Menu non trouvé' });
+      return;
+    }
+
+    res.json({ message: 'Menu supprimé avec succès' });
+  } catch (error) {
+    res.status(500).json({ error: 'Erreur lors de la suppression du menu' });
+  }
+};
