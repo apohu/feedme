@@ -12,12 +12,27 @@ export class MenuSuggestionService {
     const totalMeals = cycleDays * mealsPerDay;
 
     // Récupérer les recettes candidates
-    const candidateRecipes = await RecipeModel.searchByCriteria({
-      tags: criteria.diet_tags,
-      maxCost: criteria.budget_per_meal,
-      maxPrepTime: criteria.max_prep_time,
-      excludeIngredients: criteria.excluded_ingredients
-    });
+    const searchCriteria: {
+      tags?: number[];
+      maxCost?: number;
+      maxPrepTime?: number;
+      excludeIngredients?: number[];
+    } = {};
+
+    if (criteria.diet_tags) {
+      searchCriteria.tags = criteria.diet_tags;
+    }
+    if (criteria.budget_per_meal) {
+      searchCriteria.maxCost = criteria.budget_per_meal;
+    }
+    if (criteria.max_prep_time) {
+      searchCriteria.maxPrepTime = criteria.max_prep_time;
+    }
+    if (criteria.excluded_ingredients) {
+      searchCriteria.excludeIngredients = criteria.excluded_ingredients;
+    }
+
+    const candidateRecipes = await RecipeModel.searchByCriteria(searchCriteria);
 
     if (candidateRecipes.length === 0) {
       throw new Error('Aucune recette ne correspond aux critères');
@@ -126,7 +141,7 @@ export class MenuSuggestionService {
     let currentIndex = 0;
     while (selected.length < totalMeals && currentIndex < scoredRecipes.length) {
       const recipe = scoredRecipes[currentIndex];
-      if (recipe.id && !usedRecipes.has(recipe.id)) {
+      if (recipe && recipe.id && !usedRecipes.has(recipe.id)) {
         selected.push(recipe);
         usedRecipes.add(recipe.id);
       }
@@ -136,7 +151,11 @@ export class MenuSuggestionService {
     // Si pas assez de recettes, dupliquer les meilleures
     while (selected.length < totalMeals && scoredRecipes.length > 0) {
       const recipe = scoredRecipes[selected.length % scoredRecipes.length];
-      selected.push(recipe);
+      if (recipe) {
+        selected.push(recipe);
+      } else {
+        break; // Pas de recettes disponibles
+      }
     }
 
     // Mélanger pour la diversité
@@ -147,7 +166,12 @@ export class MenuSuggestionService {
     const shuffled = [...array];
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      const temp = shuffled[i];
+      const tempJ = shuffled[j];
+      if (temp !== undefined && tempJ !== undefined) {
+        shuffled[i] = tempJ;
+        shuffled[j] = temp;
+      }
     }
     return shuffled;
   }
@@ -165,8 +189,11 @@ export class MenuSuggestionService {
       menu[day] = {};
       for (const mealType of mealTypes) {
         if (recipeIndex < recipes.length) {
-          menu[day][mealType] = recipes[recipeIndex];
-          recipeIndex++;
+          const recipe = recipes[recipeIndex];
+          if (recipe) {
+            menu[day][mealType] = recipe;
+            recipeIndex++;
+          }
         }
       }
     }
