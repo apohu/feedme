@@ -70,6 +70,25 @@ import { Recipe, Ingredient } from '../../models/types';
             <textarea [(ngModel)]="newRecipe.instructions" name="instructions" rows="6"></textarea>
           </div>
 
+          <div class="ingredients-form-section">
+            <h4>Ingrédients (optionnel)</h4>
+            <div *ngIf="tempIngredients.length > 0" class="temp-ingredients-list">
+              <div *ngFor="let ing of tempIngredients; let i = index" class="temp-ingredient-item">
+                {{ ing.quantity }} {{ ing.unit }} {{ getIngredientNameById(ing.ingredientId) }}
+                <button type="button" (click)="removeTempIngredient(i)" class="btn-remove">×</button>
+              </div>
+            </div>
+            <div class="add-temp-ingredient">
+              <select [(ngModel)]="newTempIngredient.ingredientId" name="tempIng">
+                <option value="">Sélectionner un ingrédient</option>
+                <option *ngFor="let ing of availableIngredients" [value]="ing.id">{{ ing.name }}</option>
+              </select>
+              <input type="number" [(ngModel)]="newTempIngredient.quantity" placeholder="Quantité" min="0" step="0.1" />
+              <input type="text" [(ngModel)]="newTempIngredient.unit" placeholder="Unité" />
+              <button type="button" class="btn-add-ing" (click)="addTempIngredient()" [disabled]="!newTempIngredient.ingredientId">+</button>
+            </div>
+          </div>
+
           <div class="form-actions">
             <button type="button" class="btn-secondary" (click)="cancelCreate()">Annuler</button>
             <button type="submit" class="btn-primary" [disabled]="!newRecipe.name">Créer</button>
@@ -308,6 +327,86 @@ import { Recipe, Ingredient } from '../../models/types';
       cursor: not-allowed;
     }
 
+    .ingredients-form-section {
+      margin: 20px 0;
+      padding: 15px;
+      background: #f9f9f9;
+      border-radius: 8px;
+    }
+
+    .ingredients-form-section h4 {
+      margin-top: 0;
+    }
+
+    .temp-ingredients-list {
+      margin: 10px 0;
+    }
+
+    .temp-ingredient-item {
+      padding: 8px;
+      margin: 5px 0;
+      background: white;
+      border-radius: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .btn-remove {
+      background: #f44336;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 2px 8px;
+      cursor: pointer;
+      font-size: 1.2em;
+    }
+
+    .add-temp-ingredient {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    .add-temp-ingredient select,
+    .add-temp-ingredient input {
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+
+    .add-temp-ingredient select {
+      flex: 2;
+    }
+
+    .add-temp-ingredient input[type="number"] {
+      flex: 1;
+    }
+
+    .add-temp-ingredient input[type="text"] {
+      flex: 1;
+    }
+
+    .btn-add-ing {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-size: 1.2em;
+    }
+
+    .btn-add-ing:hover:not(:disabled) {
+      background: #45a049;
+    }
+
+    .btn-add-ing:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
     .modal-overlay {
       position: fixed;
       top: 0;
@@ -406,6 +505,14 @@ export class RecipesComponent implements OnInit {
     nutriscore: 'C'
   };
 
+  // Ingrédients temporaires pour le formulaire de création
+  tempIngredients: Array<{ingredientId: string, quantity: number, unit: string}> = [];
+  newTempIngredient = {
+    ingredientId: '',
+    quantity: 0,
+    unit: ''
+  };
+
   // Modal détails
   showDetailsModal = false;
   selectedRecipe: Recipe | null = null;
@@ -461,15 +568,68 @@ export class RecipesComponent implements OnInit {
     this.recipeService.createRecipe(this.newRecipe).subscribe({
       next: (response) => {
         console.log('Recette créée:', response);
-        this.cancelCreate();
-        this.loadRecipes();
-        alert('✅ Recette créée avec succès !');
+        const recipeId = response.id;
+
+        // Ajouter les ingrédients si présents
+        if (this.tempIngredients.length > 0) {
+          this.addIngredientsToNewRecipe(recipeId);
+        } else {
+          this.cancelCreate();
+          this.loadRecipes();
+          alert('✅ Recette créée avec succès !');
+        }
       },
       error: (error) => {
         console.error('Erreur lors de la création:', error);
         alert('❌ Erreur lors de la création de la recette: ' + (error.error?.error || error.message));
       }
     });
+  }
+
+  addIngredientsToNewRecipe(recipeId: number): void {
+    let completed = 0;
+    const total = this.tempIngredients.length;
+
+    this.tempIngredients.forEach(ing => {
+      this.recipeService.addIngredientToRecipe(
+        recipeId,
+        Number(ing.ingredientId),
+        ing.quantity,
+        ing.unit
+      ).subscribe({
+        next: () => {
+          completed++;
+          if (completed === total) {
+            this.cancelCreate();
+            this.loadRecipes();
+            alert(`✅ Recette créée avec ${total} ingrédient(s) !`);
+          }
+        },
+        error: (error) => {
+          console.error('Erreur ajout ingrédient:', error);
+          completed++;
+          if (completed === total) {
+            this.cancelCreate();
+            this.loadRecipes();
+            alert('⚠️ Recette créée mais certains ingrédients n\'ont pas pu être ajoutés');
+          }
+        }
+      });
+    });
+  }
+
+  addTempIngredient(): void {
+    if (!this.newTempIngredient.ingredientId) return;
+    this.tempIngredients.push({...this.newTempIngredient});
+    this.newTempIngredient = { ingredientId: '', quantity: 0, unit: '' };
+  }
+
+  removeTempIngredient(index: number): void {
+    this.tempIngredients.splice(index, 1);
+  }
+
+  getIngredientNameById(id: string): string {
+    return this.availableIngredients.find(i => i.id === Number(id))?.name || 'Inconnu';
   }
 
   cancelCreate(): void {
@@ -484,6 +644,8 @@ export class RecipesComponent implements OnInit {
       estimated_cost: undefined,
       nutriscore: 'C'
     };
+    this.tempIngredients = [];
+    this.newTempIngredient = { ingredientId: '', quantity: 0, unit: '' };
   }
 
   viewRecipeDetails(recipe: Recipe): void {
