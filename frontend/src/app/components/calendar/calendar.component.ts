@@ -427,7 +427,7 @@ export class CalendarComponent implements OnInit {
   addMeal(date: Date, mealType: string): void {
     this.modalMode = 'add';
     this.modalDate = date;
-    this.modalMealType = mealType;
+    this.modalMealType = (mealType === 'lunch' || mealType === 'dinner') ? mealType : 'lunch';
     this.selectedRecipeId = '';
     this.servings = 2;
     this.editingEntryId = undefined;
@@ -437,7 +437,8 @@ export class CalendarComponent implements OnInit {
   editMeal(meal: CalendarEntry): void {
     this.modalMode = 'edit';
     this.modalDate = new Date(meal.date);
-    this.modalMealType = meal.meal_type;
+    const mealType = meal.meal_type;
+    this.modalMealType = (mealType === 'lunch' || mealType === 'dinner') ? mealType : 'lunch';
     this.selectedRecipeId = meal.recipe_id || '';
     this.servings = meal.servings || 2;
     this.editingEntryId = meal.id;
