@@ -126,12 +126,12 @@ import { Recipe, Ingredient } from '../../models/types';
 
             <div class="ingredients-section">
               <h4>Ingrédients</h4>
-              <div *ngIf="selectedRecipe?.ingredients && selectedRecipe.ingredients.length > 0">
+              <div *ngIf="selectedRecipe && selectedRecipe.ingredients && selectedRecipe.ingredients.length > 0">
                 <div *ngFor="let ing of selectedRecipe.ingredients" class="ingredient-item">
-                  {{ ing.quantity }} {{ ing.unit }} {{ ing.ingredient_name }}
+                  {{ ing.quantity }} {{ ing.unit }} {{ ing.ingredient_name || 'Ingrédient inconnu' }}
                 </div>
               </div>
-              <p *ngIf="!selectedRecipe?.ingredients || selectedRecipe.ingredients.length === 0">
+              <p *ngIf="!selectedRecipe || !selectedRecipe.ingredients || selectedRecipe.ingredients.length === 0">
                 Aucun ingrédient ajouté
               </p>
 

@@ -50,6 +50,8 @@ export interface RecipeIngredient {
   unit: string;
   notes?: string;
   ingredient?: Ingredient;
+  ingredient_name?: string; // Added from SQL JOIN
+  nutriscore?: Nutriscore;  // Added from SQL JOIN
 }
 
 export interface Menu {

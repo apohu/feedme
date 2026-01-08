@@ -312,7 +312,7 @@ export class CalendarComponent implements OnInit {
   showModal = false;
   modalMode: 'add' | 'edit' = 'add';
   modalDate: Date = new Date();
-  modalMealType = '';
+  modalMealType: 'lunch' | 'dinner' = 'lunch';
   selectedRecipeId: number | string = '';
   servings = 2;
   availableRecipes: Recipe[] = [];
