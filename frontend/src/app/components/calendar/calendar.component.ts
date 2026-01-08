@@ -2,7 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CalendarService } from '../../services/calendar.service';
-import { CalendarEntry, NutritionScore } from '../../models/types';
+import { RecipeService } from '../../services/recipe.service';
+import { CalendarEntry, NutritionScore, Recipe } from '../../models/types';
 
 @Component({
   selector: 'app-calendar',
@@ -51,6 +52,39 @@ import { CalendarEntry, NutritionScore } from '../../models/types';
                 </button>
               </ng-template>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal d'ajout/édition de repas -->
+      <div *ngIf="showModal" class="modal-overlay" (click)="closeModal()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+          <h3>{{ modalMode === 'add' ? 'Ajouter un repas' : 'Modifier le repas' }}</h3>
+
+          <div class="form-group">
+            <label>{{ formatDate(modalDate) }} - {{ getMealTypeLabel(modalMealType) }}</label>
+          </div>
+
+          <div class="form-group">
+            <label>Recette</label>
+            <select [(ngModel)]="selectedRecipeId" name="recipe">
+              <option value="">Sélectionner une recette</option>
+              <option *ngFor="let recipe of availableRecipes" [value]="recipe.id">
+                {{ recipe.name }} ({{ recipe.nutriscore }})
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Nombre de portions</label>
+            <input type="number" [(ngModel)]="servings" name="servings" min="1" />
+          </div>
+
+          <div class="form-actions">
+            <button class="btn-secondary" (click)="closeModal()">Annuler</button>
+            <button class="btn-primary" (click)="saveMeal()" [disabled]="!selectedRecipeId">
+              {{ modalMode === 'add' ? 'Ajouter' : 'Modifier' }}
+            </button>
           </div>
         </div>
       </div>
@@ -182,6 +216,89 @@ import { CalendarEntry, NutritionScore } from '../../models/types';
     .nutriscore-C { background: #FECB02; color: #333; }
     .nutriscore-D { background: #EE8100; }
     .nutriscore-E { background: #E63E11; }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .modal-content h3 {
+      margin-top: 0;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-family: inherit;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+
+    .btn-primary {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #45a049;
+    }
+
+    .btn-primary:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: #999;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .btn-secondary:hover {
+      background: #777;
+    }
   `]
 })
 export class CalendarComponent implements OnInit {
@@ -191,12 +308,37 @@ export class CalendarComponent implements OnInit {
   entries: CalendarEntry[] = [];
   nutritionScore: NutritionScore | null = null;
 
-  constructor(private calendarService: CalendarService) {}
+  // Modal properties
+  showModal = false;
+  modalMode: 'add' | 'edit' = 'add';
+  modalDate: Date = new Date();
+  modalMealType = '';
+  selectedRecipeId: number | string = '';
+  servings = 2;
+  availableRecipes: Recipe[] = [];
+  editingEntryId?: number;
+
+  constructor(
+    private calendarService: CalendarService,
+    private recipeService: RecipeService
+  ) {}
 
   ngOnInit(): void {
     this.generateWeekDays();
     this.loadEntries();
     this.loadScore();
+    this.loadRecipes();
+  }
+
+  loadRecipes(): void {
+    this.recipeService.getAllRecipes().subscribe({
+      next: (recipes) => {
+        this.availableRecipes = recipes;
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement des recettes:', error);
+      }
+    });
   }
 
   generateWeekDays(): void {
@@ -283,13 +425,70 @@ export class CalendarComponent implements OnInit {
   }
 
   addMeal(date: Date, mealType: string): void {
-    console.log('Ajouter un repas pour', date, mealType);
-    // À implémenter: modal pour ajouter un repas
+    this.modalMode = 'add';
+    this.modalDate = date;
+    this.modalMealType = mealType;
+    this.selectedRecipeId = '';
+    this.servings = 2;
+    this.editingEntryId = undefined;
+    this.showModal = true;
   }
 
   editMeal(meal: CalendarEntry): void {
-    console.log('Éditer le repas', meal);
-    // À implémenter: modal pour éditer un repas
+    this.modalMode = 'edit';
+    this.modalDate = new Date(meal.date);
+    this.modalMealType = meal.meal_type;
+    this.selectedRecipeId = meal.recipe_id || '';
+    this.servings = meal.servings || 2;
+    this.editingEntryId = meal.id;
+    this.showModal = true;
+  }
+
+  saveMeal(): void {
+    if (!this.selectedRecipeId) return;
+
+    const recipe = this.availableRecipes.find(r => r.id === Number(this.selectedRecipeId));
+    if (!recipe) return;
+
+    const entry: CalendarEntry = {
+      date: this.modalDate.toISOString().split('T')[0],
+      meal_type: this.modalMealType,
+      recipe_id: Number(this.selectedRecipeId),
+      servings: this.servings,
+      nutriscore: recipe.nutriscore || 'C'
+    };
+
+    if (this.modalMode === 'edit' && this.editingEntryId) {
+      // Update existing entry
+      this.calendarService.updateEntry(this.editingEntryId, entry).subscribe({
+        next: () => {
+          this.loadEntries();
+          this.loadScore();
+          this.closeModal();
+        },
+        error: (error) => {
+          console.error('Erreur lors de la mise à jour:', error);
+          alert('Erreur lors de la mise à jour du repas');
+        }
+      });
+    } else {
+      // Create new entry
+      this.calendarService.createEntry(entry).subscribe({
+        next: () => {
+          this.loadEntries();
+          this.loadScore();
+          this.closeModal();
+        },
+        error: (error) => {
+          console.error('Erreur lors de la création:', error);
+          alert('Erreur lors de l\'ajout du repas');
+        }
+      });
+    }
+  }
+
+  closeModal(): void {
+    this.showModal = false;
   }
 
   getScoreDistribution(): any[] {
