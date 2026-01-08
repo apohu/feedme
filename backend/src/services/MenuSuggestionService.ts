@@ -186,12 +186,14 @@ export class MenuSuggestionService {
     let recipeIndex = 0;
 
     for (let day = 1; day <= cycleDays; day++) {
-      menu[day] = {};
+      const dayMenu: { [mealType: string]: Recipe } = {};
+      menu[day] = dayMenu;
+
       for (const mealType of mealTypes) {
         if (recipeIndex < recipes.length) {
           const recipe = recipes[recipeIndex];
           if (recipe) {
-            menu[day][mealType] = recipe;
+            dayMenu[mealType] = recipe;
             recipeIndex++;
           }
         }
