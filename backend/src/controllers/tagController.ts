@@ -13,7 +13,9 @@ export const getAllTags = async (req: Request, res: Response): Promise<void> => 
 
 export const getTagById = async (req: Request, res: Response): Promise<void> => {
   try {
-    const id = parseInt(req.params.id);
+    const idParam = req.params.id;
+    if (!idParam) { res.status(400).json({ error: 'ID manquant' }); return; }
+    const id = parseInt(idParam);
     const tag = await TagModel.getById(id);
 
     if (!tag) {
@@ -29,7 +31,12 @@ export const getTagById = async (req: Request, res: Response): Promise<void> => 
 
 export const getTagsByCategory = async (req: Request, res: Response): Promise<void> => {
   try {
-    const category = req.params.category as TagCategory;
+    const categoryParam = req.params.category;
+    if (!categoryParam) {
+      res.status(400).json({ error: 'Catégorie manquante' });
+      return;
+    }
+    const category = categoryParam as TagCategory;
     const tags = await TagModel.getByCategory(category);
     res.json(tags);
   } catch (error) {
@@ -49,7 +56,9 @@ export const createTag = async (req: Request, res: Response): Promise<void> => {
 
 export const updateTag = async (req: Request, res: Response): Promise<void> => {
   try {
-    const id = parseInt(req.params.id);
+    const idParam = req.params.id;
+    if (!idParam) { res.status(400).json({ error: 'ID manquant' }); return; }
+    const id = parseInt(idParam);
     const tag: Partial<Tag> = req.body;
     const success = await TagModel.update(id, tag);
 
@@ -66,7 +75,9 @@ export const updateTag = async (req: Request, res: Response): Promise<void> => {
 
 export const deleteTag = async (req: Request, res: Response): Promise<void> => {
   try {
-    const id = parseInt(req.params.id);
+    const idParam = req.params.id;
+    if (!idParam) { res.status(400).json({ error: 'ID manquant' }); return; }
+    const id = parseInt(idParam);
     const success = await TagModel.delete(id);
 
     if (!success) {

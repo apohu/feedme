@@ -13,7 +13,9 @@ export const getAllIngredients = async (req: Request, res: Response): Promise<vo
 
 export const getIngredientById = async (req: Request, res: Response): Promise<void> => {
   try {
-    const id = parseInt(req.params.id);
+    const idParam = req.params.id;
+    if (!idParam) { res.status(400).json({ error: 'ID manquant' }); return; }
+    const id = parseInt(idParam);
     const ingredient = await IngredientModel.getById(id);
 
     if (!ingredient) {
@@ -39,7 +41,9 @@ export const createIngredient = async (req: Request, res: Response): Promise<voi
 
 export const updateIngredient = async (req: Request, res: Response): Promise<void> => {
   try {
-    const id = parseInt(req.params.id);
+    const idParam = req.params.id;
+    if (!idParam) { res.status(400).json({ error: 'ID manquant' }); return; }
+    const id = parseInt(idParam);
     const ingredient: Partial<Ingredient> = req.body;
     const success = await IngredientModel.update(id, ingredient);
 
@@ -56,7 +60,9 @@ export const updateIngredient = async (req: Request, res: Response): Promise<voi
 
 export const deleteIngredient = async (req: Request, res: Response): Promise<void> => {
   try {
-    const id = parseInt(req.params.id);
+    const idParam = req.params.id;
+    if (!idParam) { res.status(400).json({ error: 'ID manquant' }); return; }
+    const id = parseInt(idParam);
     const success = await IngredientModel.delete(id);
 
     if (!success) {
@@ -72,7 +78,7 @@ export const deleteIngredient = async (req: Request, res: Response): Promise<voi
 
 export const searchIngredients = async (req: Request, res: Response): Promise<void> => {
   try {
-    const name = req.query.name as string;
+    const name = (req.query.name as string) || '';
     const ingredients = await IngredientModel.search(name);
     res.json(ingredients);
   } catch (error) {

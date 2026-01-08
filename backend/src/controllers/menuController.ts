@@ -14,7 +14,9 @@ export const getAllMenus = async (req: Request, res: Response): Promise<void> =>
 
 export const getMenuById = async (req: Request, res: Response): Promise<void> => {
   try {
-    const id = parseInt(req.params.id);
+    const idParam = req.params.id;
+    if (!idParam) { res.status(400).json({ error: 'ID manquant' }); return; }
+    const id = parseInt(idParam);
     const menu = await MenuModel.getById(id);
 
     if (!menu) {
@@ -61,7 +63,9 @@ export const generateMenuSuggestion = async (req: Request, res: Response): Promi
 
 export const updateMenu = async (req: Request, res: Response): Promise<void> => {
   try {
-    const id = parseInt(req.params.id);
+    const idParam = req.params.id;
+    if (!idParam) { res.status(400).json({ error: 'ID manquant' }); return; }
+    const id = parseInt(idParam);
     const menu: Partial<Menu> = req.body;
     const success = await MenuModel.update(id, menu);
 
@@ -78,7 +82,9 @@ export const updateMenu = async (req: Request, res: Response): Promise<void> => 
 
 export const deleteMenu = async (req: Request, res: Response): Promise<void> => {
   try {
-    const id = parseInt(req.params.id);
+    const idParam = req.params.id;
+    if (!idParam) { res.status(400).json({ error: 'ID manquant' }); return; }
+    const id = parseInt(idParam);
     const success = await MenuModel.delete(id);
 
     if (!success) {

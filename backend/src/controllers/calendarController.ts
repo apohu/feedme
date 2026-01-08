@@ -4,7 +4,12 @@ import { CalendarEntry } from '../types';
 
 export const getEntriesByDate = async (req: Request, res: Response): Promise<void> => {
   try {
-    const date = new Date(req.params.date);
+    const dateParam = req.params.date;
+    if (!dateParam) {
+      res.status(400).json({ error: 'Date manquante' });
+      return;
+    }
+    const date = new Date(dateParam);
     const entries = await CalendarEntryModel.getByDate(date);
     res.json(entries);
   } catch (error) {
@@ -14,6 +19,10 @@ export const getEntriesByDate = async (req: Request, res: Response): Promise<voi
 
 export const getEntriesByDateRange = async (req: Request, res: Response): Promise<void> => {
   try {
+    if (!req.query.startDate || !req.query.endDate) {
+      res.status(400).json({ error: 'Dates de début et de fin requises' });
+      return;
+    }
     const startDate = new Date(req.query.startDate as string);
     const endDate = new Date(req.query.endDate as string);
     const entries = await CalendarEntryModel.getByDateRange(startDate, endDate);
@@ -35,7 +44,9 @@ export const createEntry = async (req: Request, res: Response): Promise<void> =>
 
 export const updateEntry = async (req: Request, res: Response): Promise<void> => {
   try {
-    const id = parseInt(req.params.id);
+    const idParam = req.params.id;
+    if (!idParam) { res.status(400).json({ error: 'ID manquant' }); return; }
+    const id = parseInt(idParam);
     const entry: Partial<CalendarEntry> = req.body;
     const success = await CalendarEntryModel.update(id, entry);
 
@@ -52,7 +63,9 @@ export const updateEntry = async (req: Request, res: Response): Promise<void> =>
 
 export const deleteEntry = async (req: Request, res: Response): Promise<void> => {
   try {
-    const id = parseInt(req.params.id);
+    const idParam = req.params.id;
+    if (!idParam) { res.status(400).json({ error: 'ID manquant' }); return; }
+    const id = parseInt(idParam);
     const success = await CalendarEntryModel.delete(id);
 
     if (!success) {
@@ -68,6 +81,10 @@ export const deleteEntry = async (req: Request, res: Response): Promise<void> =>
 
 export const calculateScore = async (req: Request, res: Response): Promise<void> => {
   try {
+    if (!req.query.startDate || !req.query.endDate) {
+      res.status(400).json({ error: 'Dates de début et de fin requises' });
+      return;
+    }
     const startDate = new Date(req.query.startDate as string);
     const endDate = new Date(req.query.endDate as string);
 

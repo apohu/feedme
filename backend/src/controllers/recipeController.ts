@@ -13,7 +13,12 @@ export const getAllRecipes = async (req: Request, res: Response): Promise<void> 
 
 export const getRecipeById = async (req: Request, res: Response): Promise<void> => {
   try {
-    const id = parseInt(req.params.id);
+    const idParam = req.params.id;
+    if (!idParam) {
+      res.status(400).json({ error: 'ID manquant' });
+      return;
+    }
+    const id = parseInt(idParam);
     const recipe = await RecipeModel.getById(id);
 
     if (!recipe) {
@@ -39,7 +44,12 @@ export const createRecipe = async (req: Request, res: Response): Promise<void> =
 
 export const updateRecipe = async (req: Request, res: Response): Promise<void> => {
   try {
-    const id = parseInt(req.params.id);
+    const idParam = req.params.id;
+    if (!idParam) {
+      res.status(400).json({ error: 'ID manquant' });
+      return;
+    }
+    const id = parseInt(idParam);
     const recipe: Partial<Recipe> = req.body;
     const success = await RecipeModel.update(id, recipe);
 
@@ -56,7 +66,12 @@ export const updateRecipe = async (req: Request, res: Response): Promise<void> =
 
 export const deleteRecipe = async (req: Request, res: Response): Promise<void> => {
   try {
-    const id = parseInt(req.params.id);
+    const idParam = req.params.id;
+    if (!idParam) {
+      res.status(400).json({ error: 'ID manquant' });
+      return;
+    }
+    const id = parseInt(idParam);
     const success = await RecipeModel.delete(id);
 
     if (!success) {
@@ -72,15 +87,29 @@ export const deleteRecipe = async (req: Request, res: Response): Promise<void> =
 
 export const searchRecipes = async (req: Request, res: Response): Promise<void> => {
   try {
-    const criteria = {
-      tags: req.query.tags ? (req.query.tags as string).split(',').map(Number) : undefined,
-      maxCost: req.query.maxCost ? parseFloat(req.query.maxCost as string) : undefined,
-      maxPrepTime: req.query.maxPrepTime ? parseInt(req.query.maxPrepTime as string) : undefined,
-      nutriscore: req.query.nutriscore ? (req.query.nutriscore as string).split(',') : undefined,
-      excludeIngredients: req.query.excludeIngredients
-        ? (req.query.excludeIngredients as string).split(',').map(Number)
-        : undefined
-    };
+    const criteria: {
+      tags?: number[];
+      maxCost?: number;
+      maxPrepTime?: number;
+      nutriscore?: string[];
+      excludeIngredients?: number[];
+    } = {};
+
+    if (req.query.tags) {
+      criteria.tags = (req.query.tags as string).split(',').map(Number);
+    }
+    if (req.query.maxCost) {
+      criteria.maxCost = parseFloat(req.query.maxCost as string);
+    }
+    if (req.query.maxPrepTime) {
+      criteria.maxPrepTime = parseInt(req.query.maxPrepTime as string);
+    }
+    if (req.query.nutriscore) {
+      criteria.nutriscore = (req.query.nutriscore as string).split(',');
+    }
+    if (req.query.excludeIngredients) {
+      criteria.excludeIngredients = (req.query.excludeIngredients as string).split(',').map(Number);
+    }
 
     const recipes = await RecipeModel.searchByCriteria(criteria);
     res.json(recipes);
@@ -91,7 +120,12 @@ export const searchRecipes = async (req: Request, res: Response): Promise<void> 
 
 export const addIngredientToRecipe = async (req: Request, res: Response): Promise<void> => {
   try {
-    const recipeId = parseInt(req.params.id);
+    const idParam = req.params.id;
+    if (!idParam) {
+      res.status(400).json({ error: 'ID manquant' });
+      return;
+    }
+    const recipeId = parseInt(idParam);
     const { ingredientId, quantity, unit } = req.body;
 
     await RecipeModel.addIngredient(recipeId, ingredientId, quantity, unit);
@@ -103,7 +137,12 @@ export const addIngredientToRecipe = async (req: Request, res: Response): Promis
 
 export const addTagToRecipe = async (req: Request, res: Response): Promise<void> => {
   try {
-    const recipeId = parseInt(req.params.id);
+    const idParam = req.params.id;
+    if (!idParam) {
+      res.status(400).json({ error: 'ID manquant' });
+      return;
+    }
+    const recipeId = parseInt(idParam);
     const { tagId } = req.body;
 
     await RecipeModel.addTag(recipeId, tagId);
