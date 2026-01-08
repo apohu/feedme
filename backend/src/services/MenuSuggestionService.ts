@@ -57,12 +57,13 @@ export class MenuSuggestionService {
 
   private static scoreRecipes(recipes: Recipe[], criteria: MenuSuggestionCriteria): ScoredRecipe[] {
     const weights = criteria.criteria_weights || {};
+    const nutriscoreMap: Record<string, number> = { A: 5, B: 4, C: 3, D: 2, E: 1 };
 
     return recipes.map((recipe) => {
       let score = 0;
 
       // Score basé sur le nutriscore (A=5, B=4, C=3, D=2, E=1)
-      const nutriscoreValue = { A: 5, B: 4, C: 3, D: 2, E: 1 }[recipe.nutriscore || 'C'];
+      const nutriscoreValue = nutriscoreMap[recipe.nutriscore || 'C'] || 3;
       score += nutriscoreValue * (weights.nutriscore || 2.0);
 
       // Score basé sur le coût (moins cher = meilleur)

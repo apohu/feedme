@@ -105,6 +105,8 @@ export class CalendarEntryModel {
     let totalCarbs = 0;
     let totalFats = 0;
 
+    const scoreMap: Record<string, number> = { A: 5, B: 4, C: 3, D: 2, E: 1 };
+
     rows.forEach((row: any) => {
       const score = row.nutriscore;
       const count = parseInt(row.count);
@@ -112,7 +114,7 @@ export class CalendarEntryModel {
       totalMeals += count;
 
       // Pondération du score : A=5, B=4, C=3, D=2, E=1
-      const scoreValue = { A: 5, B: 4, C: 3, D: 2, E: 1 }[score as keyof typeof scoreValue] || 3;
+      const scoreValue = scoreMap[score] || 3;
       weightedScore += scoreValue * count;
 
       totalCalories += parseFloat(row.avg_calories || 0) * count;
