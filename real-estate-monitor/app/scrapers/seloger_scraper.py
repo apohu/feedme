@@ -18,40 +18,45 @@ class SeLogerScraper(BaseScraper):
 
     def build_search_url(self, transaction_type: str, criteria: Dict[str, Any]) -> str:
         """
-        Construit l'URL de recherche SeLoger
+        Construit l'URL de recherche SeLoger (nouvelle version 2026)
 
-        Note: Les URLs SeLoger sont complexes. Voici un exemple de structure.
-        Il faudra ajuster selon la structure réelle du site.
+        Basé sur la structure réelle: classified-search
         """
-        # Code projet: 1 = achat, 2 = location
-        project = "1" if transaction_type == "achat" else "2"
+        # Type de transaction: Buy ou Rent
+        distribution_type = "Buy" if transaction_type == "achat" else "Rent"
 
-        # Types: 2 = maison
-        property_type = "2"
+        # Type de bien: House (maison)
+        estate_type = "House"
 
-        # Ville de Cholet (code INSEE 490099)
-        city_code = "490099"
+        # Cholet: code location AD08FR18635
+        location_code = "AD08FR18635"
 
         # Prix max
         budget_max = criteria.get("budget_max", {})
-        max_price = budget_max.get(transaction_type, 135000)
+        max_price = budget_max.get(transaction_type, 135000 if transaction_type == "achat" else 700)
 
         # Surface min
         min_surface = criteria.get("surface_min_m2", 70)
 
-        # Pièces min
-        min_rooms = criteria.get("rooms_min", 3)
+        # Pièces et chambres min
+        min_rooms = criteria.get("rooms_min", 2)  # Adapté à 2 au lieu de 3
+        min_bedrooms = criteria.get("bedrooms_min", 2)
 
-        # Construction de l'URL
+        # Features: Parking/Garage et Jardin
+        features = "Parking_Garage,Garden"
+
+        # Construction de l'URL (nouvelle structure SeLoger 2026)
         url = (
-            f"https://www.seloger.com/list.htm"
-            f"?types={property_type}"
-            f"&projects={project}"
-            f"&places=[{{ci:{city_code}}}]"
-            f"&price=NaN/{max_price}"
-            f"&surface={min_surface}/NaN"
-            f"&rooms={min_rooms}"
-            f"&sort=d_dt_crea"  # Tri par date de création décroissante
+            f"https://www.seloger.com/classified-search"
+            f"?distributionTypes={distribution_type}"
+            f"&estateTypes={estate_type}"
+            f"&featuresIncluded={features}"
+            f"&locations={location_code}"
+            f"&numberOfBedroomsMin={min_bedrooms}"
+            f"&numberOfRoomsMin={min_rooms}"
+            f"&priceMax={max_price}"
+            f"&spaceMin={min_surface}"
+            f"&order=PriceAsc"  # Tri par prix croissant
         )
 
         return url
