@@ -4,6 +4,7 @@ Classe de base pour les scrapers utilisant Playwright (navigateur headless)
 from abc import ABC
 from typing import Optional
 import logging
+import concurrent.futures
 from playwright.sync_api import sync_playwright, Page, Browser, BrowserContext
 from .base_scraper import BaseScraper
 
@@ -69,12 +70,55 @@ class BrowserScraper(BaseScraper, ABC):
             self.playwright.stop()
             self.playwright = None
 
+    def _fetch_with_browser(self, url: str) -> Optional[str]:
+        """
+        Fonction interne qui fait le vrai scraping avec Playwright.
+        S'exécute dans un thread séparé pour éviter les conflits avec asyncio.
+        """
+        page: Optional[Page] = None
+        try:
+            # Initialiser le navigateur si nécessaire
+            self._init_browser()
+
+            # Ouvrir une nouvelle page
+            page = self.context.new_page()
+
+            # Naviguer vers l'URL avec un timeout
+            response = page.goto(url, wait_until='domcontentloaded', timeout=self.timeout * 1000)
+
+            # Vérifier le status code
+            if response and response.status >= 400:
+                logger.warning(
+                    f"[{self.source_name}] HTTP {response.status} for URL: {url}"
+                )
+                page.close()
+                return None
+
+            # Attendre un peu que le JS se charge
+            page.wait_for_timeout(2000)  # 2 secondes
+
+            # Récupérer le HTML
+            html = page.content()
+
+            # Fermer la page
+            page.close()
+
+            logger.info(f"[{self.source_name}] Successfully fetched page")
+
+            return html
+
+        except Exception as e:
+            if page:
+                page.close()
+            raise e
+
     def fetch_page(self, url: str) -> Optional[str]:
         """
         Récupère le contenu HTML d'une page avec Playwright
 
         Override de la méthode BaseScraper pour utiliser un vrai navigateur
-        au lieu de requests.
+        au lieu de requests. Exécute dans un thread séparé pour éviter
+        les conflits avec la boucle asyncio de FastAPI.
 
         Args:
             url: URL à récupérer
@@ -83,46 +127,16 @@ class BrowserScraper(BaseScraper, ABC):
             Contenu HTML ou None en cas d'erreur
         """
         for attempt in range(self.retry_attempts):
-            page: Optional[Page] = None
             try:
                 logger.info(
                     f"[{self.source_name}] Fetching URL with browser "
                     f"(attempt {attempt + 1}/{self.retry_attempts}): {url}"
                 )
 
-                # Initialiser le navigateur si nécessaire
-                self._init_browser()
-
-                # Ouvrir une nouvelle page
-                page = self.context.new_page()
-
-                # Naviguer vers l'URL avec un timeout
-                response = page.goto(url, wait_until='domcontentloaded', timeout=self.timeout * 1000)
-
-                # Vérifier le status code
-                if response and response.status >= 400:
-                    logger.warning(
-                        f"[{self.source_name}] HTTP {response.status} for URL: {url}"
-                    )
-                    if attempt < self.retry_attempts - 1:
-                        page.close()
-                        import time
-                        time.sleep(2 ** attempt)
-                        continue
-                    else:
-                        page.close()
-                        return None
-
-                # Attendre un peu que le JS se charge
-                page.wait_for_timeout(2000)  # 2 secondes
-
-                # Récupérer le HTML
-                html = page.content()
-
-                # Fermer la page
-                page.close()
-
-                logger.info(f"[{self.source_name}] Successfully fetched page")
+                # Exécuter dans un thread séparé pour éviter le conflit avec asyncio
+                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                    future = executor.submit(self._fetch_with_browser, url)
+                    html = future.result(timeout=self.timeout + 10)
 
                 # Délai entre les requêtes
                 if self.delay > 0:
@@ -136,9 +150,6 @@ class BrowserScraper(BaseScraper, ABC):
                     f"[{self.source_name}] Error fetching URL "
                     f"(attempt {attempt + 1}/{self.retry_attempts}): {e}"
                 )
-
-                if page:
-                    page.close()
 
                 if attempt < self.retry_attempts - 1:
                     import time
