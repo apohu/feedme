@@ -1,16 +1,21 @@
 """
-Scraper pour SeLoger.com
+Scraper pour SeLoger.com (avec Playwright pour contourner l'anti-bot)
 """
 from typing import List, Dict, Any
 from bs4 import BeautifulSoup
-from .base_scraper import BaseScraper
+from .browser_scraper import BrowserScraper
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-class SeLogerScraper(BaseScraper):
-    """Scraper pour le site SeLoger.com"""
+class SeLogerScraper(BrowserScraper):
+    """
+    Scraper pour le site SeLoger.com
+
+    Utilise Playwright (navigateur headless) pour contourner les protections anti-bot.
+    SeLoger bloque les scrapers simples avec un 403 Forbidden.
+    """
 
     @property
     def source_name(self) -> str:
