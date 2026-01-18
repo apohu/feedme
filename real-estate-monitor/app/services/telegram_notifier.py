@@ -3,6 +3,7 @@ Service de notification via Telegram
 """
 import os
 import logging
+import asyncio
 from typing import Optional
 from telegram import Bot
 from telegram.error import TelegramError
@@ -56,26 +57,32 @@ class TelegramNotifier:
             # Formater le message
             message = self._format_message(listing)
 
-            # Envoyer l'image si disponible
-            if self.telegram_config.get("include_images", True) and listing.main_image:
-                try:
-                    self.bot.send_photo(
-                        chat_id=self.chat_id,
-                        photo=listing.main_image,
-                        caption=message,
-                        parse_mode="Markdown",
-                    )
-                except TelegramError as e:
-                    logger.warning(f"Failed to send image, sending text only: {e}")
-                    # Si l'image échoue, envoyer juste le texte
-                    self.bot.send_message(
-                        chat_id=self.chat_id, text=message, parse_mode="Markdown"
-                    )
-            else:
-                # Envoyer juste le texte
-                self.bot.send_message(
-                    chat_id=self.chat_id, text=message, parse_mode="Markdown"
-                )
+            # Fonction async pour envoyer
+            async def send_async():
+                async with self.bot:
+                    # Envoyer l'image si disponible
+                    if self.telegram_config.get("include_images", True) and listing.main_image:
+                        try:
+                            await self.bot.send_photo(
+                                chat_id=self.chat_id,
+                                photo=listing.main_image,
+                                caption=message,
+                                parse_mode="Markdown",
+                            )
+                        except TelegramError as e:
+                            logger.warning(f"Failed to send image, sending text only: {e}")
+                            # Si l'image échoue, envoyer juste le texte
+                            await self.bot.send_message(
+                                chat_id=self.chat_id, text=message, parse_mode="Markdown"
+                            )
+                    else:
+                        # Envoyer juste le texte
+                        await self.bot.send_message(
+                            chat_id=self.chat_id, text=message, parse_mode="Markdown"
+                        )
+
+            # Exécuter de manière synchrone
+            asyncio.run(send_async())
 
             logger.info(f"Telegram notification sent for listing {listing.external_id}")
             return True
@@ -172,7 +179,11 @@ class TelegramNotifier:
             for source, source_stats in by_source.items():
                 message += f"\n• {source.upper()} : {source_stats.get('new', 0)} nouvelles, {source_stats.get('matching', 0)} matching"
 
-            self.bot.send_message(chat_id=self.chat_id, text=message, parse_mode="Markdown")
+            async def send_async():
+                async with self.bot:
+                    await self.bot.send_message(chat_id=self.chat_id, text=message, parse_mode="Markdown")
+
+            asyncio.run(send_async())
 
             logger.info("Stats summary sent to Telegram")
             return True
@@ -193,15 +204,18 @@ class TelegramNotifier:
             return False
 
         try:
-            me = self.bot.get_me()
-            logger.info(f"Telegram bot connected: @{me.username}")
+            async def test_async():
+                async with self.bot:
+                    me = await self.bot.get_me()
+                    logger.info(f"Telegram bot connected: @{me.username}")
 
-            # Envoyer un message de test
-            self.bot.send_message(
-                chat_id=self.chat_id,
-                text="✅ Bot de veille immobilière connecté avec succès !",
-            )
+                    # Envoyer un message de test
+                    await self.bot.send_message(
+                        chat_id=self.chat_id,
+                        text="✅ Bot de veille immobilière connecté avec succès !",
+                    )
 
+            asyncio.run(test_async())
             return True
 
         except TelegramError as e:

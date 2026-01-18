@@ -67,6 +67,7 @@ def test_telegram_connection():
     print("\n🔍 Test de la connexion Telegram...")
 
     try:
+        import asyncio
         from telegram import Bot
 
         token = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -76,23 +77,24 @@ def test_telegram_connection():
             print("❌ Credentials Telegram manquants")
             return False
 
-        bot = Bot(token=token)
-        me = bot.get_me()
+        async def test_bot():
+            bot = Bot(token=token)
+            async with bot:
+                me = await bot.get_me()
+                print(f"✅ Bot connecté: @{me.username}")
 
-        print(f"✅ Bot connecté: @{me.username}")
+                # Envoyer un message de test
+                await bot.send_message(chat_id=chat_id, text="✅ Test de connexion réussi !")
+                print(f"✅ Message de test envoyé au chat {chat_id}")
 
-        # Envoyer un message de test
-        bot.send_message(chat_id=chat_id, text="✅ Test de connexion réussi !")
-
-        print(f"✅ Message de test envoyé au chat {chat_id}")
-
+        asyncio.run(test_bot())
         return True
 
     except Exception as e:
         print(f"❌ Erreur lors du test Telegram: {e}")
         print("\nVérifiez que:")
         print("  1. Le token est correct")
-        print("  2. Le chat_id est correct")
+        print("  2. Le chat_id est correct (doit être un NOMBRE, pas un username)")
         print("  3. Vous avez démarré une conversation avec le bot sur Telegram")
         return False
 
