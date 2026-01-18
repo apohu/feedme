@@ -1,0 +1,106 @@
+# Configuration des critères de recherche immobilière - Cholet
+
+location:
+  city: "Cholet"
+  postal_code: "49300"
+  radius_km: 0  # Cholet intra-muros uniquement
+
+  # Villes à exclure (mentionnées comme "Cholet" mais en réalité ailleurs)
+  excluded_cities:
+    - "Mazières-en-Mauges"
+    - "Trémentines"
+    - "La Séguinière"
+    - "La Tessoualle"
+    - "Nuaillé"
+
+criteria:
+  property_type: "maison"  # maison uniquement
+
+  # Surface minimum
+  surface_min_m2: 70
+
+  # Nombre de pièces/chambres
+  rooms_min: 3  # 3 pièces idéal, mais 2 chambres OK si > 70m²
+  bedrooms_min: 2  # minimum acceptable
+
+  # Budget
+  budget_max:
+    achat: 135000  # euros
+    location: 700  # euros/mois charges comprises
+
+  # Critères obligatoires
+  required_features:
+    - "jardin"
+
+  # Critères recommandés (bonus mais pas bloquant)
+  preferred_features:
+    - "parking"
+    - "garage"
+
+  # Critères rédhibitoires
+  excluded_features:
+    - "mitoyenne double"
+    - "maison double mitoyenne"
+
+# Sites à scraper (par ordre de priorité)
+scrapers:
+  priority:
+    - name: "seloger"
+      enabled: true
+      url_template: "https://www.seloger.com/list.htm?types=2&projects={project}&cities=490099&price=NaN/{max_price}&surface={min_surface}/NaN&rooms={min_rooms}"
+
+    - name: "foncia"
+      enabled: true
+      url_template: "https://fr.foncia.com/biens/result?search[type]={type}&search[localisation][0]={city}&search[prix_max]={max_price}&search[surface_min]={min_surface}"
+
+    - name: "citya"
+      enabled: true
+      url_template: "https://www.citya.com/recherche?type={type}&ville={city}&prixMax={max_price}&surfaceMin={min_surface}"
+
+  secondary:
+    - "ocoeurdelimmo"
+    - "safti"
+    - "coteparticuliers"
+    - "sevreloirehabitat"
+    - "squarehabitat"
+    - "griffoncholoux"
+    - "nestenn"
+    - "laforet"
+    - "logicimmo"
+    - "ajp"
+    - "orpi"
+    - "century21"
+    - "ladresse"
+    - "vivreici"
+    - "hyacinthe"
+    - "lenain"
+
+# Configuration des notifications
+notifications:
+  telegram:
+    enabled: true
+    include_images: true
+    include_description: true
+    template: |
+      🏠 *Nouvelle annonce à Cholet !*
+
+      📍 *Adresse* : {address}
+      💰 *Prix* : {price}€{price_type}
+      📐 *Surface* : {surface}m²
+      🚪 *Pièces* : {rooms}
+      🛏️ *Chambres* : {bedrooms}
+
+      ✅ *Critères* : {features}
+
+      🔗 [Voir l'annonce]({url})
+
+      📅 Publiée le {date}
+      🏢 Source : {source}
+
+# Paramètres de scraping
+scraping:
+  interval_minutes: 5
+  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+  timeout_seconds: 30
+  retry_attempts: 3
+  delay_between_requests: 2  # secondes
